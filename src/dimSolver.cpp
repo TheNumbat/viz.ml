@@ -6,36 +6,38 @@
 #include <bhtsne/sp_tsne.h>
 #include <nlopt/nlopt.hpp>
 
-std::vector<std::vector<f64>> read_data() {
+std::vector<std::vector<f64>> read_data_tsne() {
 	int n = 784;
 	int d = 3;
-	double* data;
-	FILE *h;
-	h = fopen("result.dat", "r");
+	FILE* h = null;
+	std::vector<std::vector<f64>> v;
+	fopen_s(&h, "result.dat", "r");
 	if (h == NULL) {
 		printf("Error: could not open data file.\n");
-		return;
+		return v;
 	}
 	fread(&n, sizeof(int), 1, h);
 	fread(&d, sizeof(int), 1, h);
+
+	double* data = new double[n * d];
 	fread(data, sizeof(double), n * d, h);
-	std::vector<std::vector<f64>> v;
 	std::vector<f64> v1,v2,v3;
-	for (int i = 0; i<784; i++)
+	for (int i = 0; i< NUM_DATA_POINTS; i++)
 	{
 		v1.push_back(data[i]);
 		v2.push_back(data[784+i]);
 		v3.push_back(data[784*2+i]);
 	}
+	delete[] data;
 	v.push_back(v1);
 	v.push_back(v2);
 	v.push_back(v3);
+	return v;
 }
 
 #if 0
 int count = 0;
 
->>>>>>> e8bab02b3aeebfc0142d779b4864fbf9ca335936
 double mds_distance(int n, const double *x, f64 *grad, void *data)
 {
 	count++;
