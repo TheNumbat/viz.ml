@@ -24,6 +24,120 @@ using std::endl;
 SDL_Window* window = null;
 SDL_GLContext gl_context = null;
 
+double mds_distance(int n, const double *x, f64 *grad, void *data)
+{
+    dataset *d = (dataset *) data;
+    double mds_dist = 0;
+    for(int i = 0; i < NUM_DATA_POINTS; i++) {
+		for(int j = i+1; j < NUM_DATA_POINTS; j++) {
+			f32 delta[NUM_PIXELS] = d.pixels[i] - d.pixels[j];
+			f32 accum = 0.0f;
+			for(int k = 0; k < NUM_PIXELS; k++) {
+				accum += x[k] * pow(delta[k],2);
+			}
+			f32 sqrt_dist = d.distances[i][j] - sqrtf(accum);
+			mds_dist += pow((sqrt_dist),2);
+			if(grad){
+				for(int k = 0; k < NUM_PIXELS; k++) {
+					grad[k] += sqrt_dist * x[k] * delta[k];
+				}
+			}
+		}
+	}
+	return mds_dist;
+}
+
+double sammon_distance(int n, const double *x, double *grad, void *data)
+{
+    dataset *d = (dataset *) data;
+    double sam_dist = 0;
+    for(int i = 0; i < NUM_DATA_POINTS; i++) {
+		for(int j = i+1; j < NUM_DATA_POINTS; j++) {
+			f32 delta[NUM_PIXELS] = d.pixels[i] - d.pixels[j];
+			f32 accum = 0.0f;
+			for(int k = 0; k < NUM_PIXELS; k++) {
+				accum += x[k] * pow(delta[k],2);
+			}
+			f32 sqrt_dist = d.distances[i][j] - sqrtf(accum);
+			sam_dist += pow((sqrt_dist),2)/d.distances[i][j];
+			if(grad){
+				for(int k = 0; k < NUM_PIXELS; k++) {
+					grad[k] += sqrt_dist * x[k] * delta[k]/d.distances[i][j];
+				}
+			}
+		}
+	}
+	return sam_dist;
+}
+
+void run_nlopt(bool sammon, dataset *data){
+	nlopt::opt opt(nlopt::LD_MMA, NUM_PIXELS);
+	if(sammon){
+		opt.set_min_objective(sammon_distance, &data);
+	}
+	else{
+		opt.set_min_objective(mds_distance, &data);
+	}
+	double minf;
+	double x[NUM_PIXELS];
+	try {
+		opt.optimize(x, minf);
+		std::cout << "found minimum at f(" << x[0] << "," << x[1] << ") = "
+			<< std::setprecision(10) << minf << std::endl;
+	}
+	catch (std::exception &e) {
+		std::cout << "nlopt failed: " << e.what() << std::endl;
+	}
+}
+
+void run_bhtsne(dataset *data){
+	i32 N = NUM_DATA_POINTS;
+	//probably bad
+	i32 k = 90;
+	i32 perplexity = 50;
+	// find k, eta, exageration, 
+	i32 no_dims = 3;
+	i32 iterations = 500;
+	i32 verbose = 3;
+
+	f64 theta = 0.5;
+	//probably wrong
+	f64 eta = 10;
+	//probably wrong
+	f64 exageration = 0;
+	f64 *sorted_distances = NULL; 
+	i32 *sorted_indices = NULL;
+	i32 rand_seed;
+
+	TSNE* tsne = new TSNE();
+
+	time_t start = clock();
+	// Read the parameters and the dataset
+	
+	// Set random seed
+	
+	if (verbose > 0) printf("Using current time as random seed...\n");
+	srand((u32)time(NULL));
+
+	f64* Y = (f64*)malloc(N * no_dims * sizeof(f64));
+	if (Y == NULL) { printf("Memory allocation failed on Y malloc\n"); exit(1); }
+
+	// Now fire up the SNE implementation
+	//f64* costs = (f64*)calloc(N, sizeof(f64));
+	//if (costs == NULL) { printf("Memory allocation failed costs\n"); exit(1); }
+	tsne->run(sorted_distances, sorted_indices, N, no_dims, k, perplexity, theta, eta, exageration, iterations, verbose, Y);
+
+	// Save the results
+	tsne->save_data(Y, N, no_dims, verbose);
+
+	// Clean up the memory
+	free(Y); Y = NULL;
+	delete(tsne);
+	time_t end = clock();
+	if (verbose > 0) printf("T-sne required %f seconds (%f minutes) to run\n", float(end - start) / CLOCKS_PER_SEC, float(end - start) / (60 * CLOCKS_PER_SEC));
+}
+
+
 void plt_setup() {
 
 	SDL_Init(SDL_INIT_EVERYTHING);
