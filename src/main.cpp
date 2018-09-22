@@ -14,8 +14,6 @@
 #include <iomanip>
 #include <vector>
 
-#include "dimSolver.cpp"
-
 using std::cout;
 using std::endl;
 
@@ -32,7 +30,7 @@ void plt_setup() {
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, NUM_SAMPLES);
 
 	window = SDL_CreateWindow("Viz", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
@@ -157,8 +155,7 @@ i32 main(i32, char**) {
 				} break;
 
 				case SDL_WINDOWEVENT: {
-					if(e.window.event == SDL_WINDOWEVENT_RESIZED ||
-						e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+					if(e.window.event == SDL_WINDOWEVENT_RESIZED) {
 						ui.w = e.window.data1;
 						ui.h = e.window.data2;
 						sc.update_wh(ui.w, ui.h);
@@ -177,7 +174,10 @@ i32 main(i32, char**) {
 						i32 dy = (e.motion.y - ui.my);
 						cam.move(dx, dy);
 						ui.last_id = -1;
-					} else {
+					}
+					ui.mx = e.motion.x;
+					ui.my = e.motion.y;
+					if(ui.mode == uimode::idle) {
 						i32 id = sc.read_id(ui.mx, ui.my) - 1;
 						if(0 <= id && id < NUM_DATA_POINTS) {
 							ui.last_id = id;
@@ -185,8 +185,6 @@ i32 main(i32, char**) {
 							ui.last_id = -1;
 						}
 					}
-					ui.mx = e.motion.x;
-					ui.my = e.motion.y;
 				} break;
 
 				case SDL_MOUSEBUTTONDOWN: {
