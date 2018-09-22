@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-const u32 NUM_SAMPLES = 16;
+const u32 NUM_SAMPLES = 8;
 
 const f32 q_vbo_data[] = {
     -1.0f,  1.0f,  0.0f, 1.0f,
