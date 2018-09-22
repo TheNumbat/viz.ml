@@ -5,7 +5,6 @@
 #include "vmath.h"
 #include "gl.h"
 #include "cam.h"
-#include "data.h"
 
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_sdl.h>
@@ -114,6 +113,8 @@ const char* viz_names[vizmode::count] = {
 	"T-SNE"
 };
 
+#include "data.h"
+
 struct uistate {
 
 	uimode mode = uimode::idle;
@@ -138,17 +139,6 @@ i32 main(i32, char**) {
 
 		dataset* d = new dataset; d->load("images.dat", "labels.dat");
 		d->transform_axis(sc, ui.t_x, ui.t_y, ui.t_z);
-
-		auto apply_transform = [&]() -> void {
-			switch(ui.viz) {
-			case vizmode::axis: {
-				d->transform_axis(sc, ui.t_x, ui.t_y, ui.t_z);
-			} break;
-			case vizmode::tsne: {
-				d->transform_tsne(sc);
-			} break;
-			}
-		};
 
 		bool running = true;
 		while(running) {
@@ -236,18 +226,7 @@ i32 main(i32, char**) {
 				ImGui::SetNextWindowSize({ui.w / 5.0f, (f32)ui.h});
 				ImGui::Begin("Viz", null, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings);
 
-				if(ImGui::Combo("Data Set", (i32*)&ui.set, set_names, (i32)datasets::count)) {
-					switch(ui.set) {
-					case datasets::mnist: {
-						d->load("images.dat", "labels.dat");
-					} break;
-					case datasets::fashion: {
-						d->load("imagesf.dat", "labelsf.dat");
-					} break;
-					}
-					apply_transform();
-				}
-
+				ImGui::Combo("Data Set", (i32*)&ui.set, set_names, (i32)datasets::count);
 				ImGui::Combo("Alg", (i32*)&ui.viz, viz_names, (i32)vizmode::count);
 				ImGui::Separator();
 
@@ -262,7 +241,22 @@ i32 main(i32, char**) {
 				}
 
 				if(ImGui::Button("Apply")) {
-					apply_transform();
+					switch(ui.set) {
+					case datasets::mnist: {
+						d->load("images.dat", "labels.dat");
+					} break;
+					case datasets::fashion: {
+						d->load("imagesf.dat", "labelsf.dat");
+					} break;
+					}
+					switch(ui.viz) {
+					case vizmode::axis: {
+						d->transform_axis(sc, ui.t_x, ui.t_y, ui.t_z);
+					} break;
+					case vizmode::tsne: {
+						d->transform_tsne(sc, ui.set);
+					} break;
+					}
 				}
 
 				if(ui.last_id != -1) {

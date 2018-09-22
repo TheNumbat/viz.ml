@@ -35,11 +35,19 @@ struct dataset {
 
 	void load(std::string images, std::string labels);
 	void transform_axis(scene& s, i32 x, i32 y, i32 z);
-	void transform_tsne(scene& s);
+	void transform_tsne(scene& s, datasets set);
 	void destroy();
 };
 
-std::vector<std::vector<f64>> read_data_tsne();
+std::vector<f64> read_data_tsne(std::string file) {
+
+	std::ifstream in(file, std::ios::binary);
+
+	std::vector<f64> x(60000 * 3);
+	in.read((char*)x.data(), sizeof(f64) * 60000 * 3);
+
+	return x;
+}
 
 void dataset::transform_axis(scene& s, i32 x, i32 y, i32 z) {
 
@@ -51,15 +59,21 @@ void dataset::transform_axis(scene& s, i32 x, i32 y, i32 z) {
 	}
 }
 
-void dataset::transform_tsne(scene& s) {
+void dataset::transform_tsne(scene& s, datasets set) {
 
 	s.clear();
 
-	std::vector<std::vector<f64>> result = read_data_tsne();
+	std::vector<f64> result;
+
+	if(set == datasets::fashion) {
+	 	result = read_data_tsne("tsnefashion.dat");
+	} else {
+		result = read_data_tsne("tsnemnist.dat");
+	}
 
 	for(i32 i = 0; i < NUM_DATA_POINTS; i++) {
 
-		s.add_data(0.001f * v3((f32)result[0][i], (f32)result[1][i], (f32)result[2][i]), color_table[labels[i]], i + 1);
+		s.add_data(v3(20, 20, 20) + v3((f32)result[3 * i], (f32)result[3 * i + 1], (f32)result[3 * i + 2]), color_table[labels[i]], i + 1);
 	}
 }
 

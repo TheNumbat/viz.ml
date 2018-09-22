@@ -1,11 +1,10 @@
 #include <iostream>
 #include <vector>
 
-#include "data.h"
-
 #include <bhtsne/sp_tsne.h>
 #include <nlopt/nlopt.hpp>
 
+#if 0
 std::vector<std::vector<f64>> read_data_tsne() {
 	int n = 784;
 	int d = 3;
@@ -35,7 +34,6 @@ std::vector<std::vector<f64>> read_data_tsne() {
 	return v;
 }
 
-#if 0
 int count = 0;
 
 double mds_distance(int n, const double *x, f64 *grad, void *data)
