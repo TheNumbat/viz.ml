@@ -41,7 +41,7 @@ void dataset::transform_axis(scene& s, i32 x, i32 y, i32 z) {
 
 	for(i32 i = 0; i < NUM_DATA_POINTS; i++) {
 
-		s.add_data(40.0f * v3(pixels[i][x], pixels[i][y], pixels[i][z]), color_table[labels[i]], i);
+		s.add_data(40.0f * v3(pixels[i][x], pixels[i][y], pixels[i][z]), color_table[labels[i]], i + 1);
 	}
 }
 

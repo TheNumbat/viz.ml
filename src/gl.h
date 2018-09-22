@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+const u32 NUM_SAMPLES = 16;
+
 const f32 q_vbo_data[] = {
     -1.0f,  1.0f,  0.0f, 1.0f,
     -1.0f, -1.0f,  0.0f, 0.0f,
@@ -51,6 +53,7 @@ struct scene {
 	shader s_shader, q_shader;
 
 	i32 w, h;
+	f32* pixel_data = null;
 
 	void init(int w, int h);
 	void init_fbo();

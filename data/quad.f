@@ -3,7 +3,7 @@
 
 in vec2 f_uv;
 
-out vec4 color;
+out vec3 color;
 
 uniform sampler2DMS tex;
 uniform int samples;
@@ -13,10 +13,10 @@ void main() {
 
 	ivec2 coord = ivec2(f_uv * tex_size);
 
-	color = vec4(0.0);
+	color = vec3(0.0);
 
 	for (int i = 0; i < samples; i++)
-		color += texelFetch(tex, coord, i);
+		color += texelFetch(tex, coord, i).xyz;
 
 	color /= float(samples);
 }

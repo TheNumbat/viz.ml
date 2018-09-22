@@ -1,5 +1,6 @@
 
 #include "gl.h"
+#include <imgui/imgui.h>
 #include <fstream>
 #include <iostream>
 
@@ -63,6 +64,9 @@ GLuint shader::getUniform(const GLchar* name) {
 
 void scene::init_fbo() {
 
+	if(pixel_data) delete[] pixel_data;
+	pixel_data = new f32[w * h * 3]();
+
 	{
 		glGenFramebuffers(1, &id_fbo);
 		glBindFramebuffer(GL_FRAMEBUFFER, id_fbo);
@@ -70,7 +74,7 @@ void scene::init_fbo() {
 		glGenTextures(1, &id_texout);
 
 		glBindTexture(GL_TEXTURE_2D, id_texout);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -95,16 +99,16 @@ void scene::init_fbo() {
 		glGenTextures(2, texout);
 
 		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texout[0]);
-		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 16, GL_RGBA, w, h, GL_TRUE);
+		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, NUM_SAMPLES, GL_RGB8, w, h, GL_TRUE);
 		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
 
 		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texout[1]);
-		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 16, GL_RGBA, w, h, GL_TRUE);
+		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, NUM_SAMPLES, GL_RGB8, w, h, GL_TRUE);
 		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
 
 		glGenRenderbuffers(1, &rbo);
 		glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-		glRenderbufferStorageMultisample(GL_RENDERBUFFER, 16, GL_DEPTH_COMPONENT, w, h);  
+		glRenderbufferStorageMultisample(GL_RENDERBUFFER, NUM_SAMPLES, GL_DEPTH_COMPONENT, w, h);  
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, texout[0], 0);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D_MULTISAMPLE, texout[1], 0);
@@ -180,6 +184,9 @@ void scene::update_wh(int _w, int _h) {
 
 void scene::destroy_fbo() {
 
+	delete[] pixel_data;
+	pixel_data = null;
+
 	glDeleteRenderbuffers(1, &rbo);
 	glDeleteTextures(2, texout);
 	glDeleteFramebuffers(1, &fbo);
@@ -222,6 +229,20 @@ void scene::add_data(v3 pos, colorf c, i32 id) {
 	i_dirty = true;
 }
 
+i32 scene::read_id(i32 x, i32 y) {
+
+	y = h - y - 1;
+	i32 idx = y * w * 3 + x * 3;
+	
+	i32 a = (i32)(pixel_data[idx] * 255.0f);
+	i32 b = (i32)(pixel_data[idx + 1] * 255.0f);
+	i32 c = (i32)(pixel_data[idx + 2] * 255.0f);
+
+	i32 result = a | b << 8 | c << 16;
+
+	return result;
+}
+
 void scene::update() {
 
 	glBindVertexArray(vao);
@@ -260,7 +281,7 @@ void scene::render(m4 transform) {
 		glViewport(0, 0, w, h);
 		glEnable(GL_DEPTH_TEST);
 
-		glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
+		glClearColor(0.5f, 0.6f, 0.7f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		s_shader.use();
@@ -272,10 +293,24 @@ void scene::render(m4 transform) {
 	}
 
 	{
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, id_fbo);
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+		glBindFramebuffer(GL_FRAMEBUFFER, id_fbo);
 
-		glBlitFramebuffer(0, 0, w, h, 0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+		glViewport(0, 0, w, h);
+		glDisable(GL_DEPTH_TEST);
+		
+		q_shader.use();
+		glBindVertexArray(q_vao);
+		
+		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texout[1]);
+		glUniform1i(q_shader.getUniform("tex"), 0);
+		glUniform1i(q_shader.getUniform("samples"), NUM_SAMPLES);
+		glUniform2f(q_shader.getUniform("tex_size"), (f32)w, (f32)h);
+
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glBindVertexArray(0);
+
+		glBindTexture(GL_TEXTURE_2D, id_texout);
+		glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, pixel_data);
 	}
 
 	{
@@ -283,16 +318,13 @@ void scene::render(m4 transform) {
 
 		glViewport(0, 0, w, h);
 		glDisable(GL_DEPTH_TEST);
-		
-		glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-		
+
 		q_shader.use();
 		glBindVertexArray(q_vao);
 		
 		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texout[0]);
 		glUniform1i(q_shader.getUniform("tex"), 0);
-		glUniform1i(q_shader.getUniform("samples"), 16);
+		glUniform1i(q_shader.getUniform("samples"), NUM_SAMPLES);
 		glUniform2f(q_shader.getUniform("tex_size"), (f32)w, (f32)h);
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);

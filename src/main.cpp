@@ -107,6 +107,7 @@ struct uistate {
 	i32 mx = 0, my = 0, last_mx = 0, last_my = 0, w = 1280, h = 720;
 
 	i32 t_x = 405, t_y = 406, t_z = 407;
+	i32 last_id = -1;
 };
 
 i32 main(i32, char**) {
@@ -159,6 +160,14 @@ i32 main(i32, char**) {
 						i32 dx = (e.motion.x - ui.mx);
 						i32 dy = (e.motion.y - ui.my);
 						cam.move(dx, dy);
+						ui.last_id = -1;
+					} else {
+						i32 id = sc.read_id(ui.mx, ui.my) - 1;
+						if(0 <= id && id < NUM_DATA_POINTS) {
+							ui.last_id = id;
+						} else {
+							ui.last_id = -1;
+						}
 					}
 					ui.mx = e.motion.x;
 					ui.my = e.motion.y;
@@ -221,6 +230,14 @@ i32 main(i32, char**) {
 					} break;
 					}
 				}
+
+				if(ui.last_id != -1) {
+					ImGui::BeginTooltip();
+					ImGui::Text("Label: %d", d->labels[ui.last_id]);
+					ImGui::EndTooltip();
+				}
+
+				ImGui::Separator();
 
 				ImGui::End();
 			}
