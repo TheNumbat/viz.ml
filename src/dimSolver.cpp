@@ -6,7 +6,6 @@
 #include <bhtsne/sp_tsne.h>
 #include <nlopt/nlopt.hpp>
 
-
 double mds_distance(int n, const double *x, f64 *grad, void *data)
 {
     dataset *d = (dataset *) data;
@@ -86,7 +85,7 @@ std::vector<std::vector<f64>> run_nlopt(bool sammon, dataset *data){
 		try
 		{
 			opt.optimize(x, minf);
-			std::cout << "found minimum" << minf << std::endl;
+			std::cout << "found minimum " << minf << std::endl;
 			solution.push_back(x);
 		}
 		catch (std::exception &e)

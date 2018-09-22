@@ -8,7 +8,7 @@
 #include <vector>
 #include <fstream>
 
-const u32 NUM_DATA_POINTS = 10;
+const u32 NUM_DATA_POINTS = 2000;
 const u32 NUM_PIXELS = 784;
 static_assert(NUM_DATA_POINTS <= 60000, "ree");
 
@@ -102,12 +102,16 @@ void dataset::load(std::string ifile, std::string lfile) {
 		GLint swizzle[] = {GL_RED, GL_RED, GL_RED, GL_ONE};
 		glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
 
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	delete[] pix;
 
+#if 0
 	for(int i = 0; i < NUM_DATA_POINTS; i++) {
 		for(int j = 0; j < NUM_DATA_POINTS; j++) {
 			
@@ -118,4 +122,5 @@ void dataset::load(std::string ifile, std::string lfile) {
 			distances[i][j] = sqrtf(accum);
 		}
 	}
+#endif
 }

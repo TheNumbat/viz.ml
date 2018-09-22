@@ -23,8 +23,6 @@ using std::endl;
 SDL_Window* window = null;
 SDL_GLContext gl_context = null;
 
-
-
 void plt_setup() {
 
 	rand_init((u32)time(null));
