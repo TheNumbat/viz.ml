@@ -7,14 +7,16 @@
 #include <string>
 #include <vector>
 
-struct mesh {
-	std::vector<v3> 	vertices;
-	std::vector<colorf> colors;
-	std::vector<uv3> 	elements;
+struct scene {
+	std::vector<v3> 	mesh_vertices;
+	std::vector<uv3> 	mesh_elements;
+	
+	std::vector<v3> 	i_positions;
+	std::vector<colorf> i_colors;
 
 	GLuint vao = 0;
-	GLuint v_vbo = 0, c_vbo = 0, ebo = 0;
-	bool dirty = false;
+	GLuint m_vbo[2] = {}, i_vbo[2] = {};
+	bool m_dirty = false, i_dirty = false;
 
 	void init();
 	void update();
@@ -22,7 +24,8 @@ struct mesh {
 	void render();
 	void destroy();
 
-	void push_cube(v3 pos, f32 len);
+	void push_sphere(v3 pos, f32 r);
+	void add_data(v3 pos, colorf c);
 };
 
 struct shader {

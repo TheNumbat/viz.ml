@@ -61,108 +61,132 @@ GLuint shader::getUniform(const GLchar* name) {
 	return glGetUniformLocation(program, name);
 }
 
-void mesh::init() {
+void scene::init() {
+
+	push_sphere(v3(0, 0, 0), 1.0f);
 
 	glGenVertexArrays(1, &vao);
-	glGenBuffers(1, &v_vbo);
-	glGenBuffers(1, &c_vbo);
-	glGenBuffers(1, &ebo);
+	glGenBuffers(2, m_vbo);
+	glGenBuffers(2, i_vbo);
 
 	glBindVertexArray(vao);
 
-	glBindBuffer(GL_ARRAY_BUFFER, v_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, m_vbo[0]);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 	
-	glBindBuffer(GL_ARRAY_BUFFER, c_vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vbo[1]);
+
+	glBindBuffer(GL_ARRAY_BUFFER, i_vbo[0]);
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(1);
+	glVertexAttribDivisor(1, 1);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glBindBuffer(GL_ARRAY_BUFFER, i_vbo[1]);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(2);
+	glVertexAttribDivisor(2, 1);
 
 	glBindVertexArray(0);
 }
 
-void mesh::destroy() {
+void scene::destroy() {
 
-	glDeleteBuffers(1, &v_vbo);
-	glDeleteBuffers(1, &c_vbo);
-	glDeleteBuffers(1, &ebo);	
+	glDeleteBuffers(2, m_vbo);
+	glDeleteBuffers(2, i_vbo);
 	glDeleteVertexArrays(1, &vao);
 
-	v_vbo = c_vbo = ebo = vao = 0;
+	vao = m_vbo[0] = m_vbo[1] = i_vbo[0] = i_vbo[1] = 0;
 }
 
-void mesh::clear() {
-	vertices.clear();
-	colors.clear();
-	elements.clear();
-	dirty = true;
+void scene::clear() {
+	i_positions.clear();
+	i_colors.clear();
+	i_dirty = true;
 }
 
-void mesh::update() {
+void scene::add_data(v3 pos, colorf c) {
 
-	if(!dirty) return;
+	i_positions.push_back(v3(pos));
+	i_colors.push_back(c);
+	i_dirty = true;
+}
+
+void scene::update() {
 
 	glBindVertexArray(vao);
+	
+	if(m_dirty) {
 
-	glBindBuffer(GL_ARRAY_BUFFER, v_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(v3) * vertices.size(), vertices.size() ? &vertices[0] : null, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, m_vbo[0]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(v3) * mesh_vertices.size(), mesh_vertices.size() ? &mesh_vertices[0] : null, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ARRAY_BUFFER, c_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(colorf) * colors.size(), colors.size() ? &colors[0] : null, GL_STATIC_DRAW);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vbo[1]);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uv3) * mesh_elements.size(), mesh_elements.size() ? &mesh_elements[0] : null, GL_STATIC_DRAW);
+		
+		m_dirty = false;
+	}
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uv3) * elements.size(), elements.size() ? &elements[0] : null, GL_STATIC_DRAW);
+	if(i_dirty) {
+
+		glBindBuffer(GL_ARRAY_BUFFER, i_vbo[0]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(colorf) * i_colors.size(), i_colors.size() ? &i_colors[0] : null, GL_DYNAMIC_DRAW);
+
+		glBindBuffer(GL_ARRAY_BUFFER, i_vbo[1]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(v3) * i_positions.size(), i_positions.size() ? &i_positions[0] : null, GL_DYNAMIC_DRAW);
+
+		i_dirty = false;
+	}
 
 	glBindVertexArray(0);
-
-	dirty = false;
 }
 
-void mesh::render() {
+void scene::render() {
+
+	update();
 
 	glBindVertexArray(vao);
-	glDrawElements(GL_TRIANGLES, (GLsizei)elements.size() * 3, GL_UNSIGNED_INT, (void*)0);
+	glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)mesh_elements.size() * 3, GL_UNSIGNED_INT, (void*)0, (GLsizei)i_positions.size());
 	glBindVertexArray(0);
 }
 
-void mesh::push_cube(v3 pos, f32 len) {
+void scene::push_sphere(v3 pos, f32 r) {
 
-	i32 idx = (i32)vertices.size();
+	i32 divisions = 64;
+	i32 p_divisions = divisions / 2 + 1;
 
-	f32 len2 = len / 2.0f;
-	vertices.push_back(pos + v3( len2,  len2,  len2));
-	vertices.push_back(pos + v3(-len2,  len2,  len2));
-	vertices.push_back(pos + v3( len2, -len2,  len2));
-	vertices.push_back(pos + v3( len2,  len2, -len2));
-	vertices.push_back(pos + v3(-len2, -len2,  len2));
-	vertices.push_back(pos + v3( len2, -len2, -len2));
-	vertices.push_back(pos + v3(-len2,  len2, -len2));
-	vertices.push_back(pos + v3(-len2, -len2, -len2));
+	f32 th = 0.0f;
+	for(i32 i = 0; i <= divisions; i++) {
 
-	colors.push_back(colorf(1.0f, 0.0f, 0.0f, 1.0f));
-	colors.push_back(colorf(1.0f, 0.0f, 0.0f, 1.0f));
-	colors.push_back(colorf(1.0f, 0.0f, 0.0f, 1.0f));
-	colors.push_back(colorf(1.0f, 0.0f, 0.0f, 1.0f));
-	colors.push_back(colorf(1.0f, 0.0f, 0.0f, 1.0f));
-	colors.push_back(colorf(1.0f, 0.0f, 0.0f, 1.0f));
-	colors.push_back(colorf(1.0f, 0.0f, 0.0f, 1.0f));
-	colors.push_back(colorf(1.0f, 0.0f, 0.0f, 1.0f));	
+		f32 ph = 0.0f;
+		for(i32 j = 0; j < p_divisions; j++) {
 
-	elements.push_back(uv3(idx + 0, idx + 3, idx + 6));
-	elements.push_back(uv3(idx + 0, idx + 3, idx + 5));
-	elements.push_back(uv3(idx + 0, idx + 1, idx + 6));
-	elements.push_back(uv3(idx + 1, idx + 4, idx + 7));
-	elements.push_back(uv3(idx + 1, idx + 6, idx + 7));
-	elements.push_back(uv3(idx + 4, idx + 2, idx + 5));
-	elements.push_back(uv3(idx + 4, idx + 7, idx + 5));
-	elements.push_back(uv3(idx + 7, idx + 5, idx + 3));
-	elements.push_back(uv3(idx + 7, idx + 6, idx + 3));
-	elements.push_back(uv3(idx + 0, idx + 2, idx + 4));
-	elements.push_back(uv3(idx + 0, idx + 1, idx + 4));
+			f32 ct = cos(th), st = sin(th), sp = sin(ph), cp = cos(ph);
+			v3 point = v3(r * ct * sp, r * cp, r * st * sp);
 
-	dirty = true;
+			mesh_vertices.push_back(pos + point);
+
+			ph += (PI32 * 2.0f) / divisions;
+		}
+
+		th += (PI32 * 2.0f) / divisions;
+		if(i == divisions - 1) th += 0.0001f;
+	}
+
+	for (int x = 0; x < divisions; x++) {
+		for (int y = 0; y < p_divisions - 1; y++) {
+			GLuint idx = x * p_divisions + y;
+
+			i32 idx1 = (idx + 1);
+			i32 idxp = (idx + p_divisions);
+			i32 idxp1 = (idx + p_divisions + 1);
+
+			mesh_elements.push_back(uv3(idx, idx1, idxp));
+			mesh_elements.push_back(uv3(idx1, idxp, idxp1));
+		}
+	}
+
+	m_dirty = true;
 }
 
 void debug_proc(GLenum glsource, GLenum gltype, GLuint, GLenum severity, GLsizei, const GLchar* glmessage, const void*) {
