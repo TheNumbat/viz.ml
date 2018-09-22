@@ -63,7 +63,7 @@ double sammon_distance(int n, const double *x, double *grad, void *data)
 }
 
 std::vector<std::vector<f64>> run_nlopt(bool sammon, dataset *data){
-	nlopt::opt opt(nlopt::LD_MMA, NUM_PIXELS);
+	nlopt::opt opt(nlopt::LN_NEWUOA, NUM_PIXELS);
 	if(sammon){
 		opt.set_min_objective((nlopt::func)sammon_distance, data);
 	}
@@ -71,13 +71,17 @@ std::vector<std::vector<f64>> run_nlopt(bool sammon, dataset *data){
 		opt.set_min_objective((nlopt::func)mds_distance, data);
 	}
 
+	opt.set_stopval(65);
 	double minf;
 	std::vector<std::vector<f64>> solution;
 	std::vector<f64> x(NUM_PIXELS);
+
+	std::cout << opt.get_stopval() << std::endl;
+
 	for(int iter = 0; iter < 3; iter++){
 		for (int i = 0; i < NUM_PIXELS; i++)
 		{
-			x[i] = randf64();
+			x[i] = 2. * randf64();
 		}
 		try
 		{

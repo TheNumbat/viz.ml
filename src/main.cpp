@@ -96,11 +96,13 @@ enum class uimode : i32 {
 
 enum class vizmode : i32 {
 	axis = 0,
+	opt,
 	count
 };
 
 const char* viz_names[vizmode::count] = {
-	"Axis"
+	"Axis",
+	"Opt"
 };
 
 struct uistate {
@@ -230,6 +232,9 @@ i32 main(i32, char**) {
 					switch(ui.viz) {
 					case vizmode::axis: {
 						d->transform_axis(sc, ui.t_x, ui.t_y, ui.t_z);
+					} break;
+					case vizmode::opt: {
+						d->transform_opt(sc);
 					} break;
 					}
 				}

@@ -8,7 +8,7 @@
 #include <vector>
 #include <fstream>
 
-const u32 NUM_DATA_POINTS = 1000;
+const u32 NUM_DATA_POINTS = 10;
 const u32 NUM_PIXELS = 784;
 static_assert(NUM_DATA_POINTS <= 60000, "ree");
 
@@ -35,8 +35,11 @@ struct dataset {
 
 	void load(std::string images, std::string labels);
 	void transform_axis(scene& s, i32 x, i32 y, i32 z);
+	void transform_opt(scene& s);
 	void destroy();
 };
+
+std::vector<std::vector<f64>> run_nlopt(bool sammon, dataset *data);
 
 void dataset::transform_axis(scene& s, i32 x, i32 y, i32 z) {
 
@@ -45,6 +48,25 @@ void dataset::transform_axis(scene& s, i32 x, i32 y, i32 z) {
 	for(i32 i = 0; i < NUM_DATA_POINTS; i++) {
 
 		s.add_data(40.0f * v3(pixels[i][x], pixels[i][y], pixels[i][z]), color_table[labels[i]], i + 1);
+	}
+}
+
+void dataset::transform_opt(scene& s) {
+
+	s.clear();
+
+	std::vector<std::vector<f64>> result = run_nlopt(true, this);
+
+	for(i32 i = 0; i < NUM_DATA_POINTS; i++) {
+
+		f64 x = 0, y = 0, z = 0;
+		for(i32 j = 0; j < NUM_PIXELS; j++) {
+			x += result[0][j] * pixels[i][j];
+			y += result[1][j] * pixels[i][j];
+			z += result[2][j] * pixels[i][j];
+		}
+
+		s.add_data(v3((f32)x, (f32)y, (f32)z), color_table[labels[i]], i + 1);
 	}
 }
 
