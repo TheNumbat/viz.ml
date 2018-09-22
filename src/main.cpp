@@ -24,48 +24,71 @@ using std::endl;
 SDL_Window* window = null;
 SDL_GLContext gl_context = null;
 
-f64 mds_distance(int n, const f64 *x, f64 *grad, void *data)
+double mds_distance(int n, const double *x, f64 *grad, void *data)
 {
     dataset *d = (dataset *) data;
-    f64 mds_dist = 0;
+    double mds_dist = 0;
     for(int i = 0; i < NUM_DATA_POINTS; i++) {
 		for(int j = i+1; j < NUM_DATA_POINTS; j++) {
 			f32 delta[NUM_PIXELS] = d.pixels[i] - d.pixels[j];
 			f32 accum = 0.0f;
 			for(int k = 0; k < NUM_PIXELS; k++) {
-				accum += x[k] * delta[k]^2;
+				accum += x[k] * pow(delta[k],2);
 			}
 			f32 sqrt_dist = d.distances[i][j] - sqrtf(accum);
-			mds_dist += (sqrt_dist)^2;
+			mds_dist += pow((sqrt_dist),2);
 			if(grad){
-				grad[k] = sqrt_dist * x[k] * delta[k];
+				for(int k = 0; k < NUM_PIXELS; k++) {
+					grad[k] += sqrt_dist * x[k] * delta[k];
+				}
 			}
 		}
 	}
 	return mds_dist;
 }
 
-f64 sammon_distance(int n, const f64 *x, f64 *grad, void *data)
+double sammon_distance(int n, const double *x, double *grad, void *data)
 {
     dataset *d = (dataset *) data;
-    f64 sam_dist = 0;
+    double sam_dist = 0;
     for(int i = 0; i < NUM_DATA_POINTS; i++) {
 		for(int j = i+1; j < NUM_DATA_POINTS; j++) {
 			f32 delta[NUM_PIXELS] = d.pixels[i] - d.pixels[j];
 			f32 accum = 0.0f;
 			for(int k = 0; k < NUM_PIXELS; k++) {
-				accum += x[k] * delta[k]^2;
+				accum += x[k] * pow(delta[k],2);
 			}
 			f32 sqrt_dist = d.distances[i][j] - sqrtf(accum);
-			sam_dist += (sqrt_dist)^2/d.distances[i][j];
+			sam_dist += pow((sqrt_dist),2)/d.distances[i][j];
 			if(grad){
-				grad[k] = sqrt_dist * x[k] * delta[k]/d.distances[i][j];
+				for(int k = 0; k < NUM_PIXELS; k++) {
+					grad[k] += sqrt_dist * x[k] * delta[k]/d.distances[i][j];
+				}
 			}
 		}
 	}
 	return sam_dist;
 }
 
+void run_nlopt(bool sammon, dataset *data){
+	nlopt::opt opt(nlopt::LD_MMA, NUM_PIXELS);
+	if(sammon){
+		opt.set_min_objective(sammon_distance, &data);
+	}
+	else{
+		opt.set_min_objective(mds_distance, &data);
+	}
+	double minf;
+	double x[NUM_PIXELS];
+	try {
+		opt.optimize(x, minf);
+		std::cout << "found minimum at f(" << x[0] << "," << x[1] << ") = "
+			<< std::setprecision(10) << minf << std::endl;
+	}
+	catch (std::exception &e) {
+		std::cout << "nlopt failed: " << e.what() << std::endl;
+}
+}
 void plt_setup() {
 
 	SDL_Init(SDL_INIT_EVERYTHING);
