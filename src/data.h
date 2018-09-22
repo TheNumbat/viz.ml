@@ -29,7 +29,7 @@ struct dataset {
 	u8  labels[NUM_DATA_POINTS] = {};
 	f32 pixels[NUM_DATA_POINTS][NUM_PIXELS] = {};
 
-	f32 distances[NUM_DATA_POINTS][NUM_DATA_POINTS] = {};
+	// f32 distances[NUM_DATA_POINTS][NUM_DATA_POINTS] = {};
 
 	GLuint textures[NUM_DATA_POINTS] = {};
 
