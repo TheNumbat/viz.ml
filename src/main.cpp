@@ -24,6 +24,28 @@ using std::endl;
 SDL_Window* window = null;
 SDL_GLContext gl_context = null;
 
+f64 mdsDistance(int n, const f64 *x, f64 *grad, void *data)
+{
+    dataset *d = (dataset *) data;
+    f64 mds_dist = 0;
+    for(int i = 0; i < NUM_DATA_POINTS; i++) {
+		for(int j = i+1; j < NUM_DATA_POINTS; j++) {
+			f32 delta[NUM_PIXELS] = d.pixels[i] - d.pixels[j];
+			f32 accum = 0.0f;
+			for(int k = 0; k < NUM_PIXELS; k++) {
+				accum += x[k] * delta[k]^2;
+			}
+			f32 sqrt_dist = d.distances[i][j] - sqrtf(accum);
+			mds_dist += (sqrt_dist)^2;
+			if(grad){
+				grad[k] = sqrt_dist * x[k] * delta[k];
+			}
+		}
+	}
+
+	return mds_dist;
+}
+
 void plt_setup() {
 
 	SDL_Init(SDL_INIT_EVERYTHING);
