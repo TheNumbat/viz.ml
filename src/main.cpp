@@ -84,9 +84,6 @@ void begin_frame() {
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplSDL2_NewFrame(window);
 	ImGui::NewFrame();
-
-	glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 enum class uimode : i32 {
@@ -119,11 +116,9 @@ i32 main(i32, char**) {
 
 	uistate ui;
 	{
-		shader s; s.load("scene.v", "scene.f");
-
 		camera_orbit cam; cam.reset();
 
-		scene sc; sc.init();
+		scene sc; sc.init(ui.w, ui.h);
 
 		dataset* d = new dataset; d->load("images.dat", "labels.dat");
 		d->transform_axis(sc, ui.t_x, ui.t_y, ui.t_z);
@@ -151,7 +146,7 @@ i32 main(i32, char**) {
 						e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
 						ui.w = e.window.data1;
 						ui.h = e.window.data2;
-						glViewport(0, 0, ui.w, ui.h);
+						sc.update_wh(ui.w, ui.h);
 					}
 				} break;
 
@@ -200,11 +195,8 @@ i32 main(i32, char**) {
 				}
 			}
 
-			s.use();
 			m4 transform = proj(cam.fov, (f32)ui.w / (f32)ui.h, 0.01f, 2000.0f) * cam.view() * scale(v3(0.1f, 0.1f, 0.1f));
-			glUniformMatrix4fv(s.getUniform("transform"), 1, GL_FALSE, transform.a);
-			glUniform1i(s.getUniform("use_id"), 0);
-			sc.render();
+			sc.render(transform);
 
 			{
 				ImGui::SetNextWindowPos({0, 0});
@@ -240,7 +232,6 @@ i32 main(i32, char**) {
 
 		sc.destroy();
 		delete d;
-		s.destroy();
 	}
 
 	plt_shutdown();

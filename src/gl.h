@@ -7,25 +7,14 @@
 #include <string>
 #include <vector>
 
-struct scene {
-	std::vector<v3> 	mesh_vertices;
-	std::vector<uv3> 	mesh_elements;
-	
-	std::vector<v4> 	i_positions;
-	std::vector<colorf> i_colors;
+const f32 q_vbo_data[] = {
+    -1.0f,  1.0f,  0.0f, 1.0f,
+    -1.0f, -1.0f,  0.0f, 0.0f,
+     1.0f, -1.0f,  1.0f, 0.0f,
 
-	GLuint vao = 0;
-	GLuint m_vbo[2] = {}, i_vbo[2] = {};
-	bool m_dirty = false, i_dirty = false;
-
-	void init();
-	void update();
-	void clear();
-	void render();
-	void destroy();
-
-	void push_sphere(v3 pos, f32 r);
-	void add_data(v3 pos, colorf c, i32 id);
+    -1.0f,  1.0f,  0.0f, 1.0f,
+     1.0f, -1.0f,  1.0f, 0.0f,
+     1.0f,  1.0f,  1.0f, 1.0f
 };
 
 struct shader {
@@ -40,6 +29,41 @@ struct shader {
 	void load(std::string vfile, std::string ffile);
 
 	static void check(GLuint program);
+};
+
+struct scene {
+	std::vector<v3> 	mesh_vertices;
+	std::vector<uv3> 	mesh_elements;
+	
+	std::vector<v4> 	i_positions;
+	std::vector<colorf> i_colors;
+
+	GLuint fbo = 0;
+	GLuint texout[2] = {};
+	GLuint depth_buffer = 0;
+
+	GLuint vao = 0;
+	GLuint m_vbo[2] = {}, i_vbo[2] = {};
+	bool m_dirty = false, i_dirty = false;
+
+	GLuint q_vao = 0, q_vbo = 0;
+
+	shader s_shader, q_shader;
+
+	i32 w, h;
+
+	void init(int w, int h);
+	void init_fbo();
+	void update_wh(int w, int h);
+	void update();
+	void clear();
+	void render(m4 transform);
+	void destroy();
+	void destroy_fbo();
+	i32  read_id(i32 x, i32 y);
+
+	void push_sphere(v3 pos, f32 r);
+	void add_data(v3 pos, colorf c, i32 id);
 };
 
 void debug_proc(GLenum glsource, GLenum gltype, GLuint id, GLenum severity, GLsizei length, const GLchar* glmessage, const void* up);

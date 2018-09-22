@@ -61,9 +61,62 @@ GLuint shader::getUniform(const GLchar* name) {
 	return glGetUniformLocation(program, name);
 }
 
-void scene::init() {
+void scene::init_fbo() {
+
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+	glGenTextures(2, texout);
+
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texout[0]);
+	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 16, GL_RGBA, w, h, GL_TRUE);
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texout[1]);
+	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 16, GL_RGBA, w, h, GL_TRUE);
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+
+	glGenRenderbuffers(1, &depth_buffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, depth_buffer);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, 16, GL_DEPTH_COMPONENT, w, h);  
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, texout[0], 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D_MULTISAMPLE, texout[1], 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
+
+	GLenum drawbufs[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+	glDrawBuffers(2, drawbufs);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void scene::init(i32 _w, i32 _h) {
+
+	w = _w; h = _h;
+
+	s_shader.load("scene.v", "scene.f");
+	q_shader.load("quad.v", "quad.f");
 
 	push_sphere(v3(0, 0, 0), 1.0f);
+
+	{
+		glGenVertexArrays(1, &q_vao);
+		glGenBuffers(1, &q_vbo);
+
+		glBindVertexArray(q_vao);
+
+		glBindBuffer(GL_ARRAY_BUFFER, q_vbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(q_vbo_data), &q_vbo_data, GL_STATIC_DRAW);
+
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)(2 * sizeof(GLfloat)));
+		glEnableVertexAttribArray(1);
+
+		glBindVertexArray(0);
+	}
+
+	init_fbo();
 
 	glGenVertexArrays(1, &vao);
 	glGenBuffers(2, m_vbo);
@@ -90,13 +143,39 @@ void scene::init() {
 	glBindVertexArray(0);
 }
 
+void scene::update_wh(int _w, int _h) {
+
+	w = _w; h = _h;
+
+	destroy_fbo();
+	init_fbo();
+}
+
+void scene::destroy_fbo() {
+
+	glDeleteRenderbuffers(1, &depth_buffer);
+	glDeleteTextures(2, texout);
+	glDeleteFramebuffers(1, &fbo);
+
+	fbo = texout[0] = texout[1] = depth_buffer = 0;
+}
+
 void scene::destroy() {
+
+	destroy_fbo();
+
+	s_shader.destroy();
+	q_shader.destroy();
 
 	glDeleteBuffers(2, m_vbo);
 	glDeleteBuffers(2, i_vbo);
 	glDeleteVertexArrays(1, &vao);
 
+	glDeleteBuffers(1, &q_vbo);
+	glDeleteVertexArrays(1, &q_vao);
+
 	vao = m_vbo[0] = m_vbo[1] = i_vbo[0] = i_vbo[1] = 0;
+	q_vbo = q_vao = 0;
 }
 
 void scene::clear() {
@@ -141,12 +220,42 @@ void scene::update() {
 	glBindVertexArray(0);
 }
 
-void scene::render() {
+void scene::render(m4 transform) {
 
 	update();
 
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glViewport(0, 0, w, h);
+	glEnable(GL_DEPTH_TEST);
+
+	glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	s_shader.use();
+	glUniformMatrix4fv(s_shader.getUniform("transform"), 1, GL_FALSE, transform.a);
+
 	glBindVertexArray(vao);
 	glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)mesh_elements.size() * 3, GL_UNSIGNED_INT, (void*)0, (GLsizei)i_positions.size());
+	glBindVertexArray(0);
+
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glViewport(0, 0, w, h);
+	glDisable(GL_DEPTH_TEST);
+	
+	glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	
+	q_shader.use();
+	glBindVertexArray(q_vao);
+	
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texout[0]);
+	glUniform1i(q_shader.getUniform("tex"), 0);
+	glUniform1i(q_shader.getUniform("samples"), 16);
+	glUniform2f(q_shader.getUniform("tex_size"), (f32)w, (f32)h);
+
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glBindVertexArray(0);
 }
 
