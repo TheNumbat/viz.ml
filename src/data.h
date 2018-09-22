@@ -85,6 +85,8 @@ void dataset::load(std::string ifile, std::string lfile) {
 		}
 	}
 
+	destroy();
+
 	glGenTextures(NUM_DATA_POINTS, textures);
 	for(int i = 0; i < NUM_DATA_POINTS * NUM_PIXELS; i += NUM_PIXELS) {
 		

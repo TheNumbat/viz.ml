@@ -281,7 +281,7 @@ void scene::render(m4 transform) {
 		glViewport(0, 0, w, h);
 		glEnable(GL_DEPTH_TEST);
 
-		glClearColor(0.5f, 0.6f, 0.7f, 1.0f);
+		glClearColor(0.6f, 0.65f, 0.7f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		s_shader.use();

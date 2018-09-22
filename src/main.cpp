@@ -87,6 +87,12 @@ void begin_frame() {
 	ImGui::NewFrame();
 }
 
+enum class datasets : i32 {
+	mnist,
+	fashion,
+	count
+};
+
 enum class uimode : i32 {
 	cam = 0, 
 	idle
@@ -98,6 +104,11 @@ enum class vizmode : i32 {
 	count
 };
 
+const char* set_names[datasets::count] = {
+	"MNIST",
+	"Fashion-MNIST"
+};
+
 const char* viz_names[vizmode::count] = {
 	"Axis",
 	"T-SNE"
@@ -107,6 +118,7 @@ struct uistate {
 
 	uimode mode = uimode::idle;
 	vizmode viz = vizmode::axis;
+	datasets set = datasets::mnist;
 	i32 mx = 0, my = 0, last_mx = 0, last_my = 0, w = 1280, h = 720;
 
 	i32 t_x = 405, t_y = 406, t_z = 407;
@@ -126,6 +138,17 @@ i32 main(i32, char**) {
 
 		dataset* d = new dataset; d->load("images.dat", "labels.dat");
 		d->transform_axis(sc, ui.t_x, ui.t_y, ui.t_z);
+
+		auto apply_transform = [&]() -> void {
+			switch(ui.viz) {
+			case vizmode::axis: {
+				d->transform_axis(sc, ui.t_x, ui.t_y, ui.t_z);
+			} break;
+			case vizmode::tsne: {
+				d->transform_tsne(sc);
+			} break;
+			}
+		};
 
 		bool running = true;
 		while(running) {
@@ -213,7 +236,19 @@ i32 main(i32, char**) {
 				ImGui::SetNextWindowSize({ui.w / 5.0f, (f32)ui.h});
 				ImGui::Begin("Viz", null, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings);
 
-				ImGui::Combo("Type", (i32*)&ui.viz, viz_names, (i32)vizmode::count);
+				if(ImGui::Combo("Data Set", (i32*)&ui.set, set_names, (i32)datasets::count)) {
+					switch(ui.set) {
+					case datasets::mnist: {
+						d->load("images.dat", "labels.dat");
+					} break;
+					case datasets::fashion: {
+						d->load("imagesf.dat", "labelsf.dat");
+					} break;
+					}
+					apply_transform();
+				}
+
+				ImGui::Combo("Alg", (i32*)&ui.viz, viz_names, (i32)vizmode::count);
 				ImGui::Separator();
 
 				switch(ui.viz) {
@@ -227,14 +262,7 @@ i32 main(i32, char**) {
 				}
 
 				if(ImGui::Button("Apply")) {
-					switch(ui.viz) {
-					case vizmode::axis: {
-						d->transform_axis(sc, ui.t_x, ui.t_y, ui.t_z);
-					} break;
-					case vizmode::tsne: {
-						d->transform_tsne(sc);
-					} break;
-					}
+					apply_transform();
 				}
 
 				if(ui.last_id != -1) {
