@@ -1,4 +1,4 @@
-# viz.ml
+![viz.ml](https://raw.githubusercontent.com/TheNumbat/viz.ml/master/logo.png)
 HackCMU 2018: a custom gpu-based interactive dimensionality reduction visualization engine in c++ for introspection of high dimensional big data sets from machine learning
 ## Inspiration
 
