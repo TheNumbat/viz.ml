@@ -31,8 +31,11 @@ struct dataset {
 
 	f32 distances[NUM_DATA_POINTS][NUM_DATA_POINTS] = {};
 
+	GLuint textures[NUM_DATA_POINTS] = {};
+
 	void load(std::string images, std::string labels);
 	void transform_axis(scene& s, i32 x, i32 y, i32 z);
+	void destroy();
 };
 
 void dataset::transform_axis(scene& s, i32 x, i32 y, i32 z) {
@@ -43,6 +46,11 @@ void dataset::transform_axis(scene& s, i32 x, i32 y, i32 z) {
 
 		s.add_data(40.0f * v3(pixels[i][x], pixels[i][y], pixels[i][z]), color_table[labels[i]], i + 1);
 	}
+}
+
+void dataset::destroy() {
+
+	glDeleteTextures(NUM_DATA_POINTS, textures);
 }
 
 void dataset::load(std::string ifile, std::string lfile) {
@@ -61,6 +69,20 @@ void dataset::load(std::string ifile, std::string lfile) {
 			pixels[i][j] = pix[i * NUM_PIXELS + j] / 255.0f;
 		}
 	}
+
+	glGenTextures(NUM_DATA_POINTS, textures);
+	for(int i = 0; i < NUM_DATA_POINTS * NUM_PIXELS; i += NUM_PIXELS) {
+		
+		int t = i / NUM_PIXELS;
+		glBindTexture(GL_TEXTURE_2D, textures[t]);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, 28, 28, 0, GL_RED, GL_UNSIGNED_BYTE, &pix[i]);
+
+		GLint swizzle[] = {GL_RED, GL_RED, GL_RED, GL_ONE};
+		glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
+
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	delete[] pix;
 
