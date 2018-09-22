@@ -52,6 +52,7 @@ void plt_setup() {
 	ImGui::CreateContext();
 	ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
 	ImGui_ImplOpenGL3_Init();
+	// ImGui::GetIO().MouseDrawCursor = true;
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
