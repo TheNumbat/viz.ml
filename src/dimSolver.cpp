@@ -6,9 +6,40 @@
 #include <bhtsne/sp_tsne.h>
 #include <nlopt/nlopt.hpp>
 
+std::vector<std::vector<f64>> read_data() {
+	int n = 784;
+	int d = 3;
+	double* data;
+	FILE *h;
+	h = fopen("result.dat", "r");
+	if (h == NULL) {
+		printf("Error: could not open data file.\n");
+		return;
+	}
+	fread(&n, sizeof(int), 1, h);
+	fread(&d, sizeof(int), 1, h);
+	fread(data, sizeof(double), n * d, h);
+	std::vector<std::vector<f64>> v;
+	std::vector<f64> v1,v2,v3;
+	for (int i = 0; i<784; i++)
+	{
+		v1.push_back(data[i]);
+		v2.push_back(data[784+i]);
+		v3.push_back(data[784*2+i]);
+	}
+	v.push_back(v1);
+	v.push_back(v2);
+	v.push_back(v3);
+}
+
+
+#if 0
+int count = 0;
 
 double mds_distance(int n, const double *x, f64 *grad, void *data)
 {
+	count++;
+	std::cout << count << "\n";
     dataset *d = (dataset *) data;
     double mds_dist = 0;
     for(int i = 0; i < NUM_DATA_POINTS; i++) {
@@ -64,13 +95,13 @@ double sammon_distance(int n, const double *x, double *grad, void *data)
 
 std::vector<std::vector<f64>> run_nlopt(bool sammon, dataset *data){
 	nlopt::opt opt(nlopt::LN_NEWUOA, NUM_PIXELS);
-	if(sammon){
+	if(!sammon){
 		opt.set_min_objective((nlopt::func)sammon_distance, data);
 	}
 	else{
 		opt.set_min_objective((nlopt::func)mds_distance, data);
 	}
-
+	opt.set_default_initial_step(5.0);
 	opt.set_stopval(65);
 	double minf;
 	std::vector<std::vector<f64>> solution;
@@ -96,7 +127,7 @@ std::vector<std::vector<f64>> run_nlopt(bool sammon, dataset *data){
 	}
 	return solution;
 }
-
+#endif
 #if 0
 void run_bhtsne(dataset *data){
 	i32 N = NUM_DATA_POINTS;
