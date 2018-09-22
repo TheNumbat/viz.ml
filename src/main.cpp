@@ -360,6 +360,7 @@ i32 main(i32, char**) {
 				if(ui.last_id != -1) {
 					ImGui::BeginTooltip();
 					ImGui::Text("Label: %d", d->labels[ui.last_id]);
+					ImGui::Image((ImTextureID)(u64)d->textures[ui.last_id], {100, 100});
 					ImGui::EndTooltip();
 				}
 
@@ -371,6 +372,7 @@ i32 main(i32, char**) {
 			render_frame();
 		}
 
+		d->destroy();
 		sc.destroy();
 		delete d;
 	}
