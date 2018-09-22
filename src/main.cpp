@@ -87,8 +87,57 @@ void run_nlopt(bool sammon, dataset *data){
 	}
 	catch (std::exception &e) {
 		std::cout << "nlopt failed: " << e.what() << std::endl;
+	}
 }
+
+void run_bhtsne(dataset *data){
+	i32 N = NUM_DATA_POINTS;
+	//probably bad
+	i32 k = 90;
+	i32 perplexity = 50;
+	// find k, eta, exageration, 
+	i32 no_dims = 3;
+	i32 iterations = 500;
+	i32 verbose = 3;
+
+	f64 theta = 0.5;
+	//probably wrong
+	f64 eta = 10;
+	//probably wrong
+	f64 exageration = 0;
+	f64 *sorted_distances = NULL; 
+	i32 *sorted_indices = NULL;
+	i32 rand_seed;
+
+	TSNE* tsne = new TSNE();
+
+	time_t start = clock();
+	// Read the parameters and the dataset
+	
+	// Set random seed
+	
+	if (verbose > 0) printf("Using current time as random seed...\n");
+	srand((u32)time(NULL));
+
+	f64* Y = (f64*)malloc(N * no_dims * sizeof(f64));
+	if (Y == NULL) { printf("Memory allocation failed on Y malloc\n"); exit(1); }
+
+	// Now fire up the SNE implementation
+	//f64* costs = (f64*)calloc(N, sizeof(f64));
+	//if (costs == NULL) { printf("Memory allocation failed costs\n"); exit(1); }
+	tsne->run(sorted_distances, sorted_indices, N, no_dims, k, perplexity, theta, eta, exageration, iterations, verbose, Y);
+
+	// Save the results
+	tsne->save_data(Y, N, no_dims, verbose);
+
+	// Clean up the memory
+	free(Y); Y = NULL;
+	delete(tsne);
+	time_t end = clock();
+	if (verbose > 0) printf("T-sne required %f seconds (%f minutes) to run\n", float(end - start) / CLOCKS_PER_SEC, float(end - start) / (60 * CLOCKS_PER_SEC));
 }
+
+
 void plt_setup() {
 
 	SDL_Init(SDL_INIT_EVERYTHING);

@@ -4,6 +4,7 @@
         "utility": "cpp",
         "xstring": "cpp",
         "iomanip": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "iostream": "cpp"
     }
 }
