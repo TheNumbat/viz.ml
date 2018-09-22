@@ -83,7 +83,7 @@ void scene::init() {
 	glVertexAttribDivisor(1, 1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, i_vbo[1]);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(2);
 	glVertexAttribDivisor(2, 1);
 
@@ -105,9 +105,9 @@ void scene::clear() {
 	i_dirty = true;
 }
 
-void scene::add_data(v3 pos, colorf c) {
+void scene::add_data(v3 pos, colorf c, i32 id) {
 
-	i_positions.push_back(v3(pos));
+	i_positions.push_back(v4(pos, (f32)id));
 	i_colors.push_back(c);
 	i_dirty = true;
 }
@@ -133,7 +133,7 @@ void scene::update() {
 		glBufferData(GL_ARRAY_BUFFER, sizeof(colorf) * i_colors.size(), i_colors.size() ? &i_colors[0] : null, GL_DYNAMIC_DRAW);
 
 		glBindBuffer(GL_ARRAY_BUFFER, i_vbo[1]);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(v3) * i_positions.size(), i_positions.size() ? &i_positions[0] : null, GL_DYNAMIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(v4) * i_positions.size(), i_positions.size() ? &i_positions[0] : null, GL_DYNAMIC_DRAW);
 
 		i_dirty = false;
 	}

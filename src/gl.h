@@ -11,7 +11,7 @@ struct scene {
 	std::vector<v3> 	mesh_vertices;
 	std::vector<uv3> 	mesh_elements;
 	
-	std::vector<v3> 	i_positions;
+	std::vector<v4> 	i_positions;
 	std::vector<colorf> i_colors;
 
 	GLuint vao = 0;
@@ -25,7 +25,7 @@ struct scene {
 	void destroy();
 
 	void push_sphere(v3 pos, f32 r);
-	void add_data(v3 pos, colorf c);
+	void add_data(v3 pos, colorf c, i32 id);
 };
 
 struct shader {

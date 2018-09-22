@@ -5,13 +5,15 @@ layout (location = 0) in vec3 v_pos;
 
 // instanced
 layout (location = 1) in vec4 m_color;
-layout (location = 2) in vec3 m_pos;
+layout (location = 2) in vec4 m_pos;
 
 uniform mat4 transform;
 
+flat out uint id;
 out vec4 f_color;
 
 void main() {
-	gl_Position = transform * vec4(v_pos + m_pos, 1.0);
+	gl_Position = transform * vec4(v_pos + m_pos.xyz, 1.0);
 	f_color = m_color;
+	id = uint(m_pos.w);
 }

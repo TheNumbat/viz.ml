@@ -131,6 +131,8 @@ i32 main(i32, char**) {
 		bool running = true;
 		while(running) {
 		
+
+
 			begin_frame();
 			ImGuiIO& io = ImGui::GetIO();
 
@@ -201,7 +203,7 @@ i32 main(i32, char**) {
 			s.use();
 			m4 transform = proj(cam.fov, (f32)ui.w / (f32)ui.h, 0.01f, 2000.0f) * cam.view() * scale(v3(0.1f, 0.1f, 0.1f));
 			glUniformMatrix4fv(s.getUniform("transform"), 1, GL_FALSE, transform.a);
-			
+			glUniform1i(s.getUniform("use_id"), 0);
 			sc.render();
 
 			{
