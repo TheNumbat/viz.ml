@@ -17,6 +17,13 @@
 using std::cout;
 using std::endl;
 
+#ifdef _WIN32
+extern "C" {
+	__declspec(dllexport) bool NvOptimusEnablement = true;
+	__declspec(dllexport) bool AmdPowerXpressRequestHighPerformance = true;
+}
+#endif
+
 SDL_Window* window = null;
 SDL_GLContext gl_context = null;
 

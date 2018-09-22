@@ -335,7 +335,7 @@ void scene::render(m4 transform) {
 
 void scene::push_sphere(v3 pos, f32 r) {
 
-	i32 divisions = 64;
+	i32 divisions = 32;
 	i32 p_divisions = divisions / 2 + 1;
 
 	f32 th = 0.0f;
