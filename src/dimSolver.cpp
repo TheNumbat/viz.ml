@@ -82,8 +82,7 @@ std::vector<std::vector<f64>> run_nlopt(bool sammon, dataset *data){
 		try
 		{
 			opt.optimize(x, minf);
-			std::cout << "found minimum at f(" << x[0] << "," << x[1] << ") = "
-					  << std::setprecision(10) << minf << std::endl;
+			std::cout << "found minimum" << minf << std::endl;
 			solution.push_back(x);
 		}
 		catch (std::exception &e)
