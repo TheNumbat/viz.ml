@@ -76,8 +76,8 @@ struct camera_orbit {
 		fov = 60.0f;
 		pitch = 45.0f;
 		yaw = 45.0f;
-		radius = 20.0f;
-		lookingAt = v3(0, 0, 0);
+		radius = 10.0f;
+		lookingAt = v3(2, 2, 2);
 		up = v3(0, 1, 0);
 		updatePos();
 	}

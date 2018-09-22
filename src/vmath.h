@@ -306,8 +306,8 @@ union v3 {
 	v3(f32 _x) {x = _x; y = _x; z = _x;}
 	v3(f32 _x, f32 _y, f32 _z) {x = _x; y = _y; z = _z;}
 	v3(i32 _x, i32 _y, i32 _z) {x = (f32)_x; y = (f32)_y; z = (f32)_z;}
-	v3(v3& v) {*this = v;}
-	v3(v3&& v) {*this = v;}
+	v3(const v3& v) {*this = (v3&)v;}
+	v3(const v3&& v) {*this = (v3&&)v;}
 	v3& operator=(v3& v) {x = v.x; y = v.y; z = v.z; return *this;}
 	v3& operator=(v3&& v) {x = v.x; y = v.y; z = v.z; return *this;}
 };
@@ -325,8 +325,8 @@ union uv3 {
 
 	uv3() {}
 	uv3(u32 _x, u32 _y, u32 _z) {x = _x; y = _y; z = _z;}
-	uv3(uv3& v) {*this = v;}
-	uv3(uv3&& v) {*this = v;}
+	uv3(const uv3& v) {*this = (uv3&)v;}
+	uv3(const uv3&& v) {*this = (uv3&&)v;}
 	uv3& operator=(uv3& v) {x = v.x; y = v.y; z = v.z; return *this;}
 	uv3& operator=(uv3&& v) {x = v.x; y = v.y; z = v.z; return *this;}
 };
@@ -493,6 +493,8 @@ static_assert(sizeof(colorf) == 16, "sizeof(colorf) != 16");
 
 struct color3 {
 	u8 r = 0, g = 0, b = 0;
+
+	colorf to_f() {return colorf(r / 255.0f, g / 255.0f, b / 255.0f, 255.0f);}
 
 	color3() {}
 	color3(u8 _r, u8 _g, u8 _b) {r = _r; g = _g; b = _b;}

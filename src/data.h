@@ -2,22 +2,60 @@
 #pragma once
 
 #include "vmath.h"
+#include "gl.h"
 
 #include <string>
 #include <vector>
 #include <fstream>
 
-struct data_point {
-	i32 label = -1;
-	f32 data[784] = {};
+const u32 NUM_DATA_POINTS = 1000;
+static_assert(NUM_DATA_POINTS <= 60000, "ree");
+
+const colorf color_table[10] = {
+	color3{204, 102, 102}.to_f(),
+	color3{204, 163, 102}.to_f(),
+	color3{184, 204, 102}.to_f(),
+	color3{122, 204, 102}.to_f(),
+	color3{102, 204, 143}.to_f(),
+	color3{102, 204, 204}.to_f(),
+	color3{102, 143, 204}.to_f(),
+	color3{122, 102, 204}.to_f(),
+	color3{184, 102, 204}.to_f(),
+	color3{204, 102, 163}.to_f()
 };
 
-std::vector<data_point> load_mnist(std::string images, std::string labels) {
+struct dataset {
+	u8  labels[NUM_DATA_POINTS] = {};
+	f32 pixels[NUM_DATA_POINTS][784] = {};
 
-	std::vector<data_point> ret;
+	void load(std::string images, std::string labels);
+	void transform_axis(scene& s, i32 x, i32 y, i32 z);
+};
 
-	std::ifstream iin(images);
-	std::ifstream lin(labels);
+void dataset::transform_axis(scene& s, i32 x, i32 y, i32 z) {
 
-	return ret;	
+	s.clear();
+
+	for(int i = 0; i < NUM_DATA_POINTS; i++) {
+
+		s.add_data(40.0f * v3(pixels[i][x], pixels[i][y], pixels[i][z]), color_table[labels[i]]);
+	}
+}
+
+void dataset::load(std::string ifile, std::string lfile) {
+	std::ifstream iin(ifile, std::ios::binary);
+	std::ifstream lin(lfile, std::ios::binary);
+
+	lin.seekg(8, std::ios_base::beg);
+	lin.read((char*)labels, NUM_DATA_POINTS);
+
+	u8 pix[NUM_DATA_POINTS][784] = {};
+	iin.seekg(16, std::ios_base::beg);
+	iin.read((char*)pix, NUM_DATA_POINTS * 28 * 28);
+
+	for(int i = 0; i < NUM_DATA_POINTS; i++) {
+		for(int j = 0; j < 28 * 28; j++) {
+			pixels[i][j] = pix[i][j] / 255.0f;
+		}
+	}
 }

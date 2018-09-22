@@ -1,0 +1,8 @@
+
+- rebuild repo
+- precompute distances?
+- graph views?
+- actual ui
+- object picking
+- lighting
+- more algorithms
