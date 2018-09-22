@@ -38,9 +38,9 @@ struct scene {
 	std::vector<v4> 	i_positions;
 	std::vector<colorf> i_colors;
 
-	GLuint fbo = 0;
-	GLuint texout[2] = {};
-	GLuint depth_buffer = 0;
+	GLuint fbo = 0, id_fbo = 0;
+	GLuint texout[2] = {}, id_texout = 0;
+	GLuint rbo = 0, id_rbo = 0;
 
 	GLuint vao = 0;
 	GLuint m_vbo[2] = {}, i_vbo[2] = {};

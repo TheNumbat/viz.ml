@@ -126,8 +126,6 @@ i32 main(i32, char**) {
 		bool running = true;
 		while(running) {
 		
-
-
 			begin_frame();
 			ImGuiIO& io = ImGui::GetIO();
 
