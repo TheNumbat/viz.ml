@@ -9,6 +9,7 @@
 #include <fstream>
 
 const u32 NUM_DATA_POINTS = 1000;
+const u32 NUM_PIXELS = 784;
 static_assert(NUM_DATA_POINTS <= 60000, "ree");
 
 const colorf color_table[10] = {
@@ -26,7 +27,9 @@ const colorf color_table[10] = {
 
 struct dataset {
 	u8  labels[NUM_DATA_POINTS] = {};
-	f32 pixels[NUM_DATA_POINTS][784] = {};
+	f32 pixels[NUM_DATA_POINTS][NUM_PIXELS] = {};
+
+	f32 distances[NUM_DATA_POINTS][NUM_DATA_POINTS] = {};
 
 	void load(std::string images, std::string labels);
 	void transform_axis(scene& s, i32 x, i32 y, i32 z);
@@ -49,13 +52,26 @@ void dataset::load(std::string ifile, std::string lfile) {
 	lin.seekg(8, std::ios_base::beg);
 	lin.read((char*)labels, NUM_DATA_POINTS);
 
-	u8 pix[NUM_DATA_POINTS][784] = {};
+	u8* pix = new u8[NUM_DATA_POINTS * NUM_PIXELS];
 	iin.seekg(16, std::ios_base::beg);
 	iin.read((char*)pix, NUM_DATA_POINTS * 28 * 28);
 
 	for(int i = 0; i < NUM_DATA_POINTS; i++) {
-		for(int j = 0; j < 28 * 28; j++) {
-			pixels[i][j] = pix[i][j] / 255.0f;
+		for(int j = 0; j < NUM_PIXELS; j++) {
+			pixels[i][j] = pix[i * NUM_PIXELS + j] / 255.0f;
+		}
+	}
+
+	delete[] pix;
+
+	for(int i = 0; i < NUM_DATA_POINTS; i++) {
+		for(int j = 0; j < NUM_DATA_POINTS; j++) {
+			
+			f32 accum = 0.0f;
+			for(int k = 0; k < NUM_PIXELS; k++) {
+				accum += pixels[i][k] * pixels[j][k];
+			}
+			distances[i][j] = sqrtf(accum);
 		}
 	}
 }

@@ -187,6 +187,14 @@ i32 main(i32, char**) {
 						SDL_WarpMouseInWindow(window, ui.last_mx, ui.last_my);
 					}
 				} break;
+
+				case SDL_MOUSEWHEEL: {
+					if(!io.WantCaptureMouse) {
+						cam.radius -= e.wheel.y / 5.0f;
+						if(cam.radius < 0.5f) cam.radius = 0.5f;
+						cam.updatePos();
+					}
+				} break;
 				}
 			}
 
