@@ -8,7 +8,7 @@
 #include <vector>
 #include <fstream>
 
-const u32 NUM_DATA_POINTS = 10;
+const u32 NUM_DATA_POINTS = 2000;
 const u32 NUM_PIXELS = 784;
 static_assert(NUM_DATA_POINTS <= 60000, "ree");
 
@@ -29,17 +29,17 @@ struct dataset {
 	u8  labels[NUM_DATA_POINTS] = {};
 	f32 pixels[NUM_DATA_POINTS][NUM_PIXELS] = {};
 
-	f32 distances[NUM_DATA_POINTS][NUM_DATA_POINTS] = {};
+	// f32 distances[NUM_DATA_POINTS][NUM_DATA_POINTS] = {};
 
 	GLuint textures[NUM_DATA_POINTS] = {};
 
 	void load(std::string images, std::string labels);
 	void transform_axis(scene& s, i32 x, i32 y, i32 z);
-	void transform_opt(scene& s);
+	void transform_tsne(scene& s);
 	void destroy();
 };
 
-std::vector<std::vector<f64>> run_nlopt(bool sammon, dataset *data);
+std::vector<std::vector<f64>> read_data_tsne();
 
 void dataset::transform_axis(scene& s, i32 x, i32 y, i32 z) {
 
@@ -51,22 +51,15 @@ void dataset::transform_axis(scene& s, i32 x, i32 y, i32 z) {
 	}
 }
 
-void dataset::transform_opt(scene& s) {
+void dataset::transform_tsne(scene& s) {
 
 	s.clear();
 
-	std::vector<std::vector<f64>> result = run_nlopt(true, this);
+	std::vector<std::vector<f64>> result = read_data_tsne();
 
 	for(i32 i = 0; i < NUM_DATA_POINTS; i++) {
 
-		f64 x = 0, y = 0, z = 0;
-		for(i32 j = 0; j < NUM_PIXELS; j++) {
-			x += result[0][j] * pixels[i][j];
-			y += result[1][j] * pixels[i][j];
-			z += result[2][j] * pixels[i][j];
-		}
-
-		s.add_data(v3((f32)x, (f32)y, (f32)z), color_table[labels[i]], i + 1);
+		s.add_data(0.001f * v3((f32)result[0][i], (f32)result[1][i], (f32)result[2][i]), color_table[labels[i]], i + 1);
 	}
 }
 
@@ -92,6 +85,8 @@ void dataset::load(std::string ifile, std::string lfile) {
 		}
 	}
 
+	destroy();
+
 	glGenTextures(NUM_DATA_POINTS, textures);
 	for(int i = 0; i < NUM_DATA_POINTS * NUM_PIXELS; i += NUM_PIXELS) {
 		
@@ -102,12 +97,16 @@ void dataset::load(std::string ifile, std::string lfile) {
 		GLint swizzle[] = {GL_RED, GL_RED, GL_RED, GL_ONE};
 		glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
 
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	delete[] pix;
 
+#if 0
 	for(int i = 0; i < NUM_DATA_POINTS; i++) {
 		for(int j = 0; j < NUM_DATA_POINTS; j++) {
 			
@@ -118,4 +117,5 @@ void dataset::load(std::string ifile, std::string lfile) {
 			distances[i][j] = sqrtf(accum);
 		}
 	}
+#endif
 }

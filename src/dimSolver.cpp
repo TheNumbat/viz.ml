@@ -6,32 +6,34 @@
 #include <bhtsne/sp_tsne.h>
 #include <nlopt/nlopt.hpp>
 
-std::vector<std::vector<f64>> read_data() {
+std::vector<std::vector<f64>> read_data_tsne() {
 	int n = 784;
 	int d = 3;
-	double* data;
-	FILE *h;
-	h = fopen("result.dat", "r");
+	FILE* h = null;
+	std::vector<std::vector<f64>> v;
+	fopen_s(&h, "result.dat", "r");
 	if (h == NULL) {
 		printf("Error: could not open data file.\n");
-		return;
+		return v;
 	}
 	fread(&n, sizeof(int), 1, h);
 	fread(&d, sizeof(int), 1, h);
+
+	double* data = new double[n * d];
 	fread(data, sizeof(double), n * d, h);
-	std::vector<std::vector<f64>> v;
 	std::vector<f64> v1,v2,v3;
-	for (int i = 0; i<784; i++)
+	for (int i = 0; i< NUM_DATA_POINTS; i++)
 	{
 		v1.push_back(data[i]);
 		v2.push_back(data[784+i]);
 		v3.push_back(data[784*2+i]);
 	}
+	delete[] data;
 	v.push_back(v1);
 	v.push_back(v2);
 	v.push_back(v3);
+	return v;
 }
-
 
 #if 0
 int count = 0;
@@ -117,7 +119,7 @@ std::vector<std::vector<f64>> run_nlopt(bool sammon, dataset *data){
 		try
 		{
 			opt.optimize(x, minf);
-			std::cout << "found minimum" << minf << std::endl;
+			std::cout << "found minimum " << minf << std::endl;
 			solution.push_back(x);
 		}
 		catch (std::exception &e)

@@ -19,7 +19,7 @@ const f32 q_vbo_data[] = {
      1.0f,  1.0f,  1.0f, 1.0f
 };
 
-struct shader {
+struct shader {	
 	
 	GLuint program = 0;
 	GLuint v = 0, f = 0;
