@@ -304,7 +304,7 @@ void scene::render(m4 transform) {
 		
 		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texout[1]);
 		glUniform1i(q_shader.getUniform("tex"), 0);
-		glUniform1i(q_shader.getUniform("samples"), NUM_SAMPLES);
+		glUniform1i(q_shader.getUniform("samples"), 1);
 		glUniform2f(q_shader.getUniform("tex_size"), (f32)w, (f32)h);
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
