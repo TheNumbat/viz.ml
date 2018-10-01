@@ -36,8 +36,11 @@ struct dataset {
 	void load(std::string images, std::string labels);
 	void transform_axis(scene& s, i32 x, i32 y, i32 z);
 	void transform_tsne(scene& s, datasets set);
+	void transform_mds(scene& s);
 	void destroy();
 };
+
+std::vector<f64> run_nlopt(bool sammon, dataset *data);
 
 std::vector<f64> read_data_tsne(std::string file) {
 
@@ -70,6 +73,18 @@ void dataset::transform_tsne(scene& s, datasets set) {
 	} else {
 		result = read_data_tsne("tsnemnist.dat");
 	}
+
+	for(i32 i = 0; i < NUM_DATA_POINTS; i++) {
+
+		s.add_data(v3(20, 20, 20) + v3((f32)result[3 * i], (f32)result[3 * i + 1], (f32)result[3 * i + 2]), color_table[labels[i]], i + 1);
+	}
+}
+
+void dataset::transform_mds(scene& s) {
+
+	s.clear();
+
+	std::vector<f64> result = run_nlopt(false, this);
 
 	for(i32 i = 0; i < NUM_DATA_POINTS; i++) {
 

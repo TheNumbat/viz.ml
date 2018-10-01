@@ -6,6 +6,9 @@
 #include "gl.h"
 #include "cam.h"
 
+#include <bhtsne/sp_tsne.h>
+#include <nlopt/nlopt.hpp>
+
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_sdl.h>
 #include <imgui/imgui_impl_opengl3.h>
@@ -23,6 +26,49 @@ extern "C" {
 	__declspec(dllexport) bool AmdPowerXpressRequestHighPerformance = true;
 }
 #endif
+
+enum class datasets : i32 {
+	mnist,
+	fashion,
+	count
+};
+
+enum class uimode : i32 {
+	cam = 0, 
+	idle
+};
+
+enum class vizmode : i32 {
+	axis = 0,
+	tsne,
+	mds,
+	count
+};
+
+const char* set_names[datasets::count] = {
+	"MNIST",
+	"Fashion-MNIST"
+};
+
+const char* viz_names[vizmode::count] = {
+	"Axis",
+	"T-SNE",
+	"MDS"
+};
+
+#include "data.h"
+#include "dimSolver.cpp"
+
+struct uistate {
+
+	uimode mode = uimode::idle;
+	vizmode viz = vizmode::axis;
+	datasets set = datasets::mnist;
+	i32 mx = 0, my = 0, last_mx = 0, last_my = 0, w = 1280, h = 720;
+
+	i32 t_x = 405, t_y = 406, t_z = 407;
+	i32 last_id = -1;
+};
 
 SDL_Window* window = null;
 SDL_GLContext gl_context = null;
@@ -91,46 +137,6 @@ void begin_frame() {
 	ImGui_ImplSDL2_NewFrame(window);
 	ImGui::NewFrame();
 }
-
-enum class datasets : i32 {
-	mnist,
-	fashion,
-	count
-};
-
-enum class uimode : i32 {
-	cam = 0, 
-	idle
-};
-
-enum class vizmode : i32 {
-	axis = 0,
-	tsne,
-	count
-};
-
-const char* set_names[datasets::count] = {
-	"MNIST",
-	"Fashion-MNIST"
-};
-
-const char* viz_names[vizmode::count] = {
-	"Axis",
-	"T-SNE"
-};
-
-#include "data.h"
-
-struct uistate {
-
-	uimode mode = uimode::idle;
-	vizmode viz = vizmode::axis;
-	datasets set = datasets::mnist;
-	i32 mx = 0, my = 0, last_mx = 0, last_my = 0, w = 1280, h = 720;
-
-	i32 t_x = 405, t_y = 406, t_z = 407;
-	i32 last_id = -1;
-};
 
 i32 main(i32, char**) {
 
@@ -261,6 +267,9 @@ i32 main(i32, char**) {
 					} break;
 					case vizmode::tsne: {
 						d->transform_tsne(sc, ui.set);
+					} break;
+					case vizmode::mds: {
+						d->transform_mds(sc);
 					} break;
 					}
 				}

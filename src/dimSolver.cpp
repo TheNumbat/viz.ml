@@ -1,9 +1,3 @@
-#include <iostream>
-#include <vector>
-
-#include <data.h>
-#include <bhtsne/sp_tsne.h>
-#include <nlopt/nlopt.hpp>
 
 int count = 0;
 
@@ -54,7 +48,7 @@ double sammon_distance(int n, const double *x, f64 *grad, void *data)
 	return sammon_dist;
 }
 
-std::vector<f64> run_nlopt(bool sammon, dataset *data){
+std::vector<f64> run_nlopt(bool sammon, dataset *data) {
 	nlopt::opt opt(nlopt::LD_MMA, NUM_PIXELS);
 	opt.set_min_objective((nlopt::func)mds_distance, data);
 	//opt.set_default_initial_step(5.0);
