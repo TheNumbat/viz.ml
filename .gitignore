@@ -7,3 +7,4 @@ data/log_*
 data/assets/*.asset
 imgui.ini
 viz
+ *.sfk

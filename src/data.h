@@ -29,7 +29,7 @@ struct dataset {
 	u8  labels[NUM_DATA_POINTS] = {};
 	f32 pixels[NUM_DATA_POINTS][NUM_PIXELS] = {};
 
-	// f32 distances[NUM_DATA_POINTS][NUM_DATA_POINTS] = {};
+	f32 distances[NUM_DATA_POINTS][NUM_DATA_POINTS] = {};
 
 	GLuint textures[NUM_DATA_POINTS] = {};
 
@@ -119,8 +119,6 @@ void dataset::load(std::string ifile, std::string lfile) {
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	delete[] pix;
-
-#if 0
 	for(int i = 0; i < NUM_DATA_POINTS; i++) {
 		for(int j = 0; j < NUM_DATA_POINTS; j++) {
 			
@@ -131,5 +129,4 @@ void dataset::load(std::string ifile, std::string lfile) {
 			distances[i][j] = sqrtf(accum);
 		}
 	}
-#endif
 }

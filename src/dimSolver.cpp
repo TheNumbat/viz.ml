@@ -1,38 +1,9 @@
 #include <iostream>
 #include <vector>
 
+#include <data.h>
 #include <bhtsne/sp_tsne.h>
 #include <nlopt/nlopt.hpp>
-
-#if 0
-std::vector<std::vector<f64>> read_data_tsne() {
-	int n = 784;
-	int d = 3;
-	FILE* h = null;
-	std::vector<std::vector<f64>> v;
-	fopen_s(&h, "result.dat", "r");
-	if (h == NULL) {
-		printf("Error: could not open data file.\n");
-		return v;
-	}
-	fread(&n, sizeof(int), 1, h);
-	fread(&d, sizeof(int), 1, h);
-
-	double* data = new double[n * d];
-	fread(data, sizeof(double), n * d, h);
-	std::vector<f64> v1,v2,v3;
-	for (int i = 0; i< NUM_DATA_POINTS; i++)
-	{
-		v1.push_back(data[i]);
-		v2.push_back(data[784+i]);
-		v3.push_back(data[784*2+i]);
-	}
-	delete[] data;
-	v.push_back(v1);
-	v.push_back(v2);
-	v.push_back(v3);
-	return v;
-}
 
 int count = 0;
 
@@ -42,92 +13,69 @@ double mds_distance(int n, const double *x, f64 *grad, void *data)
 	std::cout << count << "\n";
     dataset *d = (dataset *) data;
     double mds_dist = 0;
-    for(int i = 0; i < NUM_DATA_POINTS; i++) {
+    for(int i = 0; i < NUM_DATA_POINTS-1; i++) {
 		for(int j = i+1; j < NUM_DATA_POINTS; j++) {
-			f64 delta[NUM_PIXELS];
-			for(int k = 0; k < NUM_PIXELS; k++) {
-				delta[k] = d->pixels[i][k] - d->pixels[j][k];
-			}
-
-			f64 accum = 0.0f;
-			for(int k = 0; k < NUM_PIXELS; k++) {
-				accum += x[k] * pow(delta[k],2);
-			}
-			f64 sqrt_dist = d->distances[i][j] - sqrt(accum);
-			mds_dist += pow((sqrt_dist),2);
+			f64 dist_r3 = sqrt(pow(x[3*i+0] - x[3*j+0],2) +
+							   pow(x[3*i+1] - x[3*j+1],2) +
+							   pow(x[3*i+2] - x[3*j+2],2));
+			f64 dist_delta = d->distances[i][j]-dist_r3;
+			mds_dist += pow(dist_delta, 2);
 			if(grad){
-				for(int k = 0; k < NUM_PIXELS; k++) {
-					grad[k] += sqrt_dist * x[k] * delta[k];
+				for(int k = 0; k < 3; k++) {
+					grad[i+k] += 2 * dist_delta * x[3*i+k] - x[3*j+k]/dist_r3;
+					grad[j+k] += 2 * dist_delta * x[3*i+k] - x[3*j+k]/dist_r3;
 				}
 			}
 		}
 	}
 	return mds_dist;
 }
-
-double sammon_distance(int n, const double *x, double *grad, void *data)
+double sammon_distance(int n, const double *x, f64 *grad, void *data)
 {
+	count++;
+	std::cout << count << "\n";
     dataset *d = (dataset *) data;
-    double sam_dist = 0;
-    for(int i = 0; i < NUM_DATA_POINTS; i++) {
+    double sammon_dist = 0;
+    for(int i = 0; i < NUM_DATA_POINTS-1; i++) {
 		for(int j = i+1; j < NUM_DATA_POINTS; j++) {
-			f64 delta[NUM_PIXELS];
-			for(int k = 0; k < NUM_PIXELS; k++) {
-				delta[k] = d->pixels[i][k] - d->pixels[j][k];
-			}
-
-			f64 accum = 0.0f;
-			for(int k = 0; k < NUM_PIXELS; k++) {
-				accum += x[k] * pow(delta[k],2);
-			}
-
-			f64 sqrt_dist = d->distances[i][j] - sqrt(accum);
-			sam_dist += pow((sqrt_dist),2)/d->distances[i][j];
+			f64 dist_r3 = sqrt(pow(x[3*i+0] - x[3*j+0],2) +
+							   pow(x[3*i+1] - x[3*j+1],2) +
+							   pow(x[3*i+2] - x[3*j+2],2));
+			f64 dist_delta = d->distances[i][j]-dist_r3;
+			sammon_dist += pow(dist_delta, 2) / d->distances[i][j];
 			if(grad){
-				for(int k = 0; k < NUM_PIXELS; k++) {
-					grad[k] += sqrt_dist * x[k] * delta[k]/d->distances[i][j];
+				for(int k = 0; k < 3; k++) {
+					grad[i+k] += 2 * dist_delta * x[3*i+k] - x[3*j+k]/dist_r3 /d->distances[i][j];
+					grad[j+k] += 2 * dist_delta * x[3*i+k] - x[3*j+k]/dist_r3 /d->distances[i][j];
 				}
 			}
 		}
 	}
-	return sam_dist;
+	return sammon_dist;
 }
 
-std::vector<std::vector<f64>> run_nlopt(bool sammon, dataset *data){
-	nlopt::opt opt(nlopt::LN_NEWUOA, NUM_PIXELS);
-	if(!sammon){
-		opt.set_min_objective((nlopt::func)sammon_distance, data);
-	}
-	else{
-		opt.set_min_objective((nlopt::func)mds_distance, data);
-	}
-	opt.set_default_initial_step(5.0);
-	opt.set_stopval(65);
+std::vector<f64> run_nlopt(bool sammon, dataset *data){
+	nlopt::opt opt(nlopt::LD_MMA, NUM_PIXELS);
+	opt.set_min_objective((nlopt::func)mds_distance, data);
+	//opt.set_default_initial_step(5.0);
+	//opt.set_stopval(65);
 	double minf;
-	std::vector<std::vector<f64>> solution;
-	std::vector<f64> x(NUM_PIXELS);
-
-	std::cout << opt.get_stopval() << std::endl;
-
-	for(int iter = 0; iter < 3; iter++){
-		for (int i = 0; i < NUM_PIXELS; i++)
-		{
-			x[i] = 2. * randf64();
-		}
-		try
-		{
-			opt.optimize(x, minf);
-			std::cout << "found minimum " << minf << std::endl;
-			solution.push_back(x);
-		}
-		catch (std::exception &e)
-		{
-			std::cout << "nlopt failed: " << e.what() << std::endl;
-		}
+	std::vector<f64> x(NUM_PIXELS*3);
+	for (int i = 0; i < NUM_PIXELS*3; i++)
+	{
+			x[i] = randf64();
 	}
-	return solution;
+	try
+	{
+		opt.optimize(x, minf);
+		std::cout << "found minimum " << minf << std::endl;
+	}
+	catch (std::exception &e)
+	{
+		std::cout << "nlopt failed: " << e.what() << std::endl;
+	}
+	return x;
 }
-#endif
 #if 0
 void run_bhtsne(dataset *data){
 	i32 N = NUM_DATA_POINTS;

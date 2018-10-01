@@ -1,5 +1,0 @@
-
-- precompute distances?
-- graph views?
-- lighting
-- more algorithms
